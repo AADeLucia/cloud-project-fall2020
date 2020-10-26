@@ -1,0 +1,10 @@
+# Raw data
+/flux/data
+
+# Uneeded
+/flux/simulator
+
+# Cache files
+__pycache__
+*.DS_Store
+
