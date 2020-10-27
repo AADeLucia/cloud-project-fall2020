@@ -28,7 +28,7 @@ def parse_args():
 
 
 if __name__ == "__main__":
-    args = parser_args()
+    args = parse_args()
     results_dict = {}
 
     # Customize logging
@@ -45,6 +45,9 @@ if __name__ == "__main__":
     # Train model for each dataset
     TARGET_COLUMN = 'flow_size'
     for TEST_NAME in args.tests:
+        logging.info(f"On test {TEST_NAME}")
+        results_dict[TEST_NAME] = {}
+
         TRAINING_PATH = f"{args.data_dir}/{TEST_NAME}/training/"
         TEST_PATH = f"{args.data_dir}/{TEST_NAME}/test/"
         VALIDATION_PATH = f"{args.data_dir}/{TEST_NAME}/validation/"
@@ -74,7 +77,7 @@ if __name__ == "__main__":
         logging.info('Training started')
         model = xgboost.train(param, training, param['num_epochs'])
 
-        def print_performance(files, write_to_simulator=False):
+        def evaluate_model(files, write_to_simulator=False):
             real = []
             predicted = []
             for f in files:
@@ -87,16 +90,16 @@ if __name__ == "__main__":
                 real += outputs
                 predicted += pred
 
-            xgboost_util.print_metrics(real, predicted)
+            return xgboost_util.score_predictions(real, predicted)
 
-        logging.info('TRAINING')
-        print_performance(training_files)
-
-        logging.info('TEST')
-        print_performance(test_files)
-
-        logging.info('VALIDATION')
-        print_performance(validation_files)
+        for name, files in [("train", training_files), ("test", test_files), ("validation", validation_files)]:
+            mae, mse, r2 = evaluate_model(files)
+            results_dict[TEST_NAME][name] = {
+                "mae": mae,
+                "mse": mse,
+                "r2": r2
+            }
+            logging.info(f"{name}\tMAE: {mae:.2}\tMSE: {mse:.2}\tR2: {r2:.2}")
         
         logging.info("------------------------------------")
 

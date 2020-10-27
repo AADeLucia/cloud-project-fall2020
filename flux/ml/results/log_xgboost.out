@@ -1,0 +1,41 @@
+Len outputs: 64169
+Training started
+TRAINING
+TEST
+VALIDATION
+------------------------------------
+On test KMeans
+Len outputs: 64169
+Training started
+train	MAE: 8.9e-08	MSE: 4.3e-05	R2: 1.0
+test	MAE: 0.00016	MSE: 0.0011	R2: 0.88
+validation	MAE: 0.00014	MSE: 0.00099	R2: 0.91
+------------------------------------
+On test PageRank
+Len outputs: 54646
+Training started
+train	MAE: 8.2e-07	MSE: 0.00037	R2: 1.0
+test	MAE: 0.00012	MSE: 0.0012	R2: 0.86
+validation	MAE: 0.0001	MSE: 0.0012	R2: 0.83
+------------------------------------
+On test SGD
+Len outputs: 515473
+Training started
+train	MAE: 2.3e-06	MSE: 0.00036	R2: 0.95
+test	MAE: 1.7e-05	MSE: 0.00055	R2: 0.6
+validation	MAE: 7.3e-06	MSE: 0.00059	R2: 0.79
+------------------------------------
+On test web_server
+Len outputs: 657
+Training started
+train	MAE: 5.2e-07	MSE: 0.00048	R2: 1.0
+test	MAE: 0.0017	MSE: 0.0084	R2: 0.86
+validation	MAE: 0.0018	MSE: 0.0097	R2: 0.88
+------------------------------------
+On test tensorflow
+Len outputs: 11909772
+Training started
+train	MAE: 0.0011	MSE: 0.0037	R2: 0.97
+test	MAE: 0.0011	MSE: 0.0037	R2: 0.97
+validation	MAE: 0.0011	MSE: 0.0037	R2: 0.97
+------------------------------------

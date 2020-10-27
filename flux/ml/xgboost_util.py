@@ -3,10 +3,20 @@ import pandas as pd
 import numpy as np
 from pandas import concat
 
+
+def score_predictions(real, prediction):
+    return (
+        mean_squared_error(real, prediction),
+        mean_absolute_error(real, prediction),
+        r2_score(real, prediction)
+    )
+
+
 def print_metrics(real, prediction):
-    print 'MSE: %f' % mean_squared_error(real, prediction)
-    print 'MAE: %f' % mean_absolute_error(real, prediction)
-    print 'R2: %f' % r2_score(real, prediction)
+    print('MSE: {}'.format(mean_squared_error(real, prediction)))
+    print('MAE: {}'.format(mean_absolute_error(real, prediction)))
+    print('R2: {}'.format(r2_score(real, prediction)))
+
 
 def calculate_scaling(training_paths):
     scaling = {}
@@ -53,7 +63,7 @@ def make_io(data):
     inputs = None
     outputs = None
     for d in data:
-        i_data = d[0].as_matrix()
+        i_data = d[0].to_numpy()
         o_data = d[1].tolist()
 
         if inputs is None:
