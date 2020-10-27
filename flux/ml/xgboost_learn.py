@@ -5,75 +5,99 @@ import os
 import xgboost_util
 import math
 
+from argparse import ArgumentParser
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 import random
+import logging
 
-random.seed(0)
+logging.basicConfig(level=logging.INFO)
 
-NUMBER_OF_TREES = 50
-WINDOW_SIZE = 5
 
-TEST_NAME = 'PageRank'
-#TEST_NAME = 'KMeans'
-#TEST_NAME = 'SGD'
-#TEST_NAME = 'tensorflow'
-#TEST_NAME = 'web_server'
+def parse_args():
+    parser = ArgumentParser()
+    parser.add_argument("--data-dir", required=True)
+    parser.add_argument("--tests", nargs="+", default=["KMeans", "PageRank", "SGD", "web_server", "tensorflow"])
+    parser.add_argument("--output-dir", required=True, type=str)
+    parser.add_argument("--log-file", type=str)
+    parser.add_argument("--look-back", type=int, default=5, help="Also referred to as window size")
+    parser.add_argument("--debug", action="store_true")
+    parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--predict-only", action="store_true")
+    return parser.parse_args()
 
-TARGET_COLUMN = 'flow_size'
 
-TRAINING_PATH = '../data/ml/' + TEST_NAME + '/training/'
-TEST_PATH = '../data/ml/' + TEST_NAME + '/test/'
-VALIDATION_PATH = '../data/ml/' + TEST_NAME + '/validation/'
+if __name__ == "__main__":
+    args = parser_args()
+    results_dict = {}
 
-training_files = [os.path.join(TRAINING_PATH, f) for f in os.listdir(TRAINING_PATH)]
-test_files = [os.path.join(TEST_PATH, f) for f in os.listdir(TEST_PATH)]
-validation_files = [os.path.join(VALIDATION_PATH, f) for f in os.listdir(VALIDATION_PATH)]
+    # Customize logging
+    logger = logging.getLogger()
+    if args.debug:
+        logger.setLevel(logging.DEBUG)
+    if args.log_file:
+        filehandler = logging.FileHandler(args.log_file, 'a')
+        logger.addHandler(filehandler)
+    
+    # Set seed
+    random.seed(args.seed)
 
-scaling = xgboost_util.calculate_scaling(training_files)
-data = xgboost_util.prepare_files(training_files, WINDOW_SIZE, scaling, TARGET_COLUMN)
+    # Train model for each dataset
+    TARGET_COLUMN = 'flow_size'
+    for TEST_NAME in args.tests:
+        TRAINING_PATH = f"{args.data_dir}/{TEST_NAME}/training/"
+        TEST_PATH = f"{args.data_dir}/{TEST_NAME}/test/"
+        VALIDATION_PATH = f"{args.data_dir}/{TEST_NAME}/validation/"
 
-inputs, outputs = xgboost_util.make_io(data)
+        training_files = [os.path.join(TRAINING_PATH, f) for f in os.listdir(TRAINING_PATH)]
+        test_files = [os.path.join(TEST_PATH, f) for f in os.listdir(TEST_PATH)]
+        validation_files = [os.path.join(VALIDATION_PATH, f) for f in os.listdir(VALIDATION_PATH)]
 
-# fit model no training data
-param = {
-    'num_epochs' : NUMBER_OF_TREES,
-    'max_depth' : 10,
-    'objective' : 'reg:linear',
-    'booster' : 'gbtree',
-    'base_score' : 2,
-    'silent': 1,
-    'eval_metric': 'mae'
-}
+        scaling = xgboost_util.calculate_scaling(training_files)
+        data = xgboost_util.prepare_files(training_files, args.look_back, scaling, TARGET_COLUMN)
 
-training = xgboost.DMatrix(inputs, outputs, feature_names = data[0][0].columns)
-print len(outputs)
-print 'Training started'
-model = xgboost.train(param, training, param['num_epochs'])
-
-def print_performance(files, write_to_simulator=False):
-    real = []
-    predicted = []
-    for f in files:
-        data = xgboost_util.prepare_files([f], WINDOW_SIZE, scaling, TARGET_COLUMN)
         inputs, outputs = xgboost_util.make_io(data)
 
-        y_pred = model.predict(xgboost.DMatrix(inputs, feature_names = data[0][0].columns))
-        pred = y_pred.tolist()
+        # fit model no training data
+        param = {
+            'num_epochs' : 50,
+            'max_depth' : 10,
+            'objective' : 'reg:linear',
+            'booster' : 'gbtree',
+            'base_score' : 2,
+            'silent': 1,
+            'eval_metric': 'mae'
+        }
 
-        real += outputs
-        predicted += pred
+        training = xgboost.DMatrix(inputs, outputs, feature_names = data[0][0].columns)
+        logging.info(f"Len outputs: {len(outputs)}")
+        logging.info('Training started')
+        model = xgboost.train(param, training, param['num_epochs'])
 
-    xgboost_util.print_metrics(real, predicted)
+        def print_performance(files, write_to_simulator=False):
+            real = []
+            predicted = []
+            for f in files:
+                data = xgboost_util.prepare_files([f], args.look_back, scaling, TARGET_COLUMN)
+                inputs, outputs = xgboost_util.make_io(data)
 
-print 'TRAINING'
-print_performance(training_files)
-print
+                y_pred = model.predict(xgboost.DMatrix(inputs, feature_names = data[0][0].columns))
+                pred = y_pred.tolist()
 
-print 'TEST'
-print_performance(test_files)
-print
+                real += outputs
+                predicted += pred
 
-print 'VALIDATION'
-print_performance(validation_files)
+            xgboost_util.print_metrics(real, predicted)
+
+        logging.info('TRAINING')
+        print_performance(training_files)
+
+        logging.info('TEST')
+        print_performance(test_files)
+
+        logging.info('VALIDATION')
+        print_performance(validation_files)
+        
+        logging.info("------------------------------------")
+
+
