@@ -2,30 +2,36 @@
 Edited by Alexandra DeLucia for logging and model save.
 """
 # LSTM for international airline passengers problem with regression framing
+import pickle
+import time
+import os
+from argparse import ArgumentParser
+import logging
+
 import numpy
 import pandas as pd
+from keras.models import load_model
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import LSTM
 from keras.layers import Activation
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import r2_score
-import os
-from argparse import ArgumentParser
-import logging
 
-
-# fix random seed for reproducibility
-numpy.random.seed(7)
+# Configure default logging
+logging.basicConfig(level=logging.INFO)
 
 
 def parse_args():
     parser = ArgumentParser()
+    parser.add_argument("--data-dir", required=True)
     parser.add_argument("--tests", nargs="+", default=["KMeans", "PageRank", "SGD", "tensorflow", "web_server"])
-    parser.add_argument("--output-dir", type=str)
+    parser.add_argument("--output-dir", required=True, type=str)
     parser.add_argument("--log-file", type=str)
     parser.add_argument("--look-back", type=int, default=5)
-    parser.add_argument("--debug" action="store_true")
+    parser.add_argument("--debug", action="store_true")
+    parser.add_argument("--seed", type=int, default=7)
+    parser.add_argument("--predict-only", action="store_true")
     return parser.parse_args()
 
 
@@ -55,16 +61,29 @@ def load_dataset(path, ):
 
 
 def main():
-    look_back = 5
-    OUTPUT_PATH = "results"
+    # Parse commandline options
+    args = parse_args()
     results_dict = {}
+    
+    # Customize logging
+    logger = logging.getLogger()
+    if args.debug:
+        logger.setLevel(logging.DEBUG)
+    if args.log_file:
+        filehandler = logging.FileHandler(args.log_file, 'a')
+        logger.addHandler(filehandler)
 
-    for TEST_NAME in ["KMeans", "PageRank", "SGD", "tensorflow", "web_server"]:
-        print(f"Started running experiment {TEST_NAME}")
+    # Set seed for reproducibility
+    numpy.random.seed(args.seed)
 
-        TRAIN_PATH = '../data/ml/' + TEST_NAME +'/training/'
-        TEST_PATH = '../data/ml/' + TEST_NAME +'/test/'
-        VALIDATION_PATH = '../data/ml/' + TEST_NAME +'/validation/'
+    # Process each test case
+    for TEST_NAME in args.tests:
+        logging.info(f"Started running experiment {TEST_NAME}")
+
+        TRAIN_PATH = f"{args.data_dir}/{TEST_NAME}/training/"
+        TEST_PATH = f"{args.data_dir}/{TEST_NAME}/test/"
+        VALIDATION_PATH = f"{args.data_dir}/{TEST_NAME}/validation/"
+        MODEL_PATH = f"{args.output_dir}/ffnn_{TEST_NAME}"
         
         # Load and normalize the dataset
         scaler = MinMaxScaler(feature_range=(0, 1))
@@ -78,42 +97,55 @@ def main():
         validation = load_dataset(VALIDATION_PATH)
         validation = scaler.transform(validation)
 
-        trainX, trainY = create_dataset(train, look_back)
-        testX, testY = create_dataset(test, look_back)
-        validationX, validationY = create_dataset(validation, look_back)
+        trainX, trainY = create_dataset(train, args.look_back)
+        testX, testY = create_dataset(test, args.look_back)
+        validationX, validationY = create_dataset(validation, args.look_back)
+ 
+        # Check if model needs to be trained
+        if not args.predict_only:
+            # Build and train model
+            logging.info("Building model")
+            model = Sequential()
+            model.add(Dense(5, input_dim=trainX.shape[1], activation='relu'))
+            model.add(Dense(5, activation='relu'))
+            model.add(Dense(1, activation='sigmoid'))
+            model.compile(loss='mean_absolute_error', optimizer='adam')
 
-        # Build and train model
-        model = Sequential()
-        model.add(Dense(5, input_dim=trainX.shape[1], activation='relu'))
-        model.add(Dense(5, activation='relu'))
-        model.add(Dense(1, activation='sigmoid'))
-        model.compile(loss='mean_absolute_error', optimizer='adam')
-        model.fit(trainX, trainY, epochs=250, batch_size=10, verbose=2)
+            start = time.time()
+            model.fit(trainX, trainY, epochs=250, batch_size=10, verbose=2)
+            end = time.time()
+            logging.debug(f"Model took {end-start/60:.2} minutes to train")
 
+            # Save model
+            logging.info("Saving model")
+            model.save(MODEL_PATH)
+
+        else:
+            logging.info("Loading pre-trained model")
+            model = load_model(MODEL_PATH)
+        
         # Make predictions
         trainPredict = model.predict(trainX)
         testPredict = model.predict(testX)
         validationPredict = model.predict(validationX)
         
         trainScore = r2_score(trainY.flatten(), trainPredict.flatten())
-        print('Train Score: %.2f R2' % (trainScore))
+        logging.info('Train Score: %.2f R2' % (trainScore))
         testScore = r2_score(testY.flatten(), testPredict.flatten())
-        print('Test Score: %.2f R2' % (testScore))
+        logging.info('Test Score: %.2f R2' % (testScore))
         validationScore = r2_score(validationY.flatten(), validationPredict.flatten())
-        print('Validation Score: %.2f R2' % (validationScore))
+        logging.info('Validation Score: %.2f R2' % (validationScore))
         
-        # Save model and scores
-        model.save(f"{OUTPUT_PATH}/ffnn_{TEST_NAME}")
         results_dict[TEST_NAME] = {
             "train": trainScore,
             "test": testScore,
             "validation": validationScore
         }
-        print("---------------------------------------------------------------------\n")
+        logging.info("---------------------------------------------------------------------\n")
 
     # Save all scores
-    print("Saving all results")
-    with open(f"{OUTPUT_PATH}/ffnn_results.pkl", "wb") as f:
+    logging.info("Saving all results")
+    with open(f"{args.output_dir}/ffnn_results.pkl", "wb") as f:
         pickle.dump(results_dict, f)
 
 

@@ -1,0 +1,76 @@
+Started running experiment KMeans
+Started running experiment KMeans
+Started running experiment KMeans
+Started running experiment KMeans
+Started running experiment KMeans
+Loading pre-trained model
+Train Score: 0.93 R2
+Test Score: 0.86 R2
+Validation Score: 0.94 R2
+---------------------------------------------------------------------
+
+Started running experiment PageRank
+Loading pre-trained model
+Train Score: 0.89 R2
+Test Score: 0.87 R2
+Validation Score: 0.84 R2
+---------------------------------------------------------------------
+
+Started running experiment SGD
+Loading pre-trained model
+Train Score: 0.45 R2
+Test Score: 0.53 R2
+Validation Score: 0.69 R2
+---------------------------------------------------------------------
+
+Started running experiment tensorflow
+Loading pre-trained model
+Train Score: 0.96 R2
+Test Score: 0.96 R2
+Validation Score: 0.96 R2
+---------------------------------------------------------------------
+
+Started running experiment web_server
+Loading pre-trained model
+Train Score: 0.89 R2
+Test Score: 0.80 R2
+Validation Score: 0.84 R2
+---------------------------------------------------------------------
+
+Saving all results
+Started running experiment KMeans
+Loading pre-trained model
+Train Score: 0.93 R2
+Test Score: 0.86 R2
+Validation Score: 0.94 R2
+---------------------------------------------------------------------
+
+Started running experiment PageRank
+Loading pre-trained model
+Train Score: 0.89 R2
+Test Score: 0.87 R2
+Validation Score: 0.84 R2
+---------------------------------------------------------------------
+
+Started running experiment SGD
+Loading pre-trained model
+Train Score: 0.45 R2
+Test Score: 0.53 R2
+Validation Score: 0.69 R2
+---------------------------------------------------------------------
+
+Started running experiment tensorflow
+Loading pre-trained model
+Train Score: 0.96 R2
+Test Score: 0.96 R2
+Validation Score: 0.96 R2
+---------------------------------------------------------------------
+
+Started running experiment web_server
+Loading pre-trained model
+Train Score: 0.89 R2
+Test Score: 0.80 R2
+Validation Score: 0.84 R2
+---------------------------------------------------------------------
+
+Saving all results
