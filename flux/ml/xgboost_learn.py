@@ -1,4 +1,11 @@
 #!/usr/bin/env python
+"""
+Modified by Alexandra DeLucia. Added:
+- logging
+- model saving
+- switched to scikit-learn API to work with LIME
+(https://xgboost.readthedocs.io/en/latest/python/python_api.html#module-xgboost.sklearn)
+"""
 
 import os
 import math
@@ -37,7 +44,7 @@ if __name__ == "__main__":
     if args.debug:
         logger.setLevel(logging.DEBUG)
     if args.log_file:
-        filehandler = logging.FileHandler(args.log_file, 'a')
+        filehandler = logging.FileHandler(args.log_file, "w+")
         logger.addHandler(filehandler)
     
     # Set seed
@@ -62,23 +69,24 @@ if __name__ == "__main__":
         data = xgboost_util.prepare_files(training_files, args.look_back, scaling, TARGET_COLUMN)
 
         inputs, outputs = xgboost_util.make_io(data)
-
-        # fit model no training data
-        param = {
-            'num_epochs' : 50,
-            'max_depth' : 10,
-            'objective' : 'reg:linear',
-            'booster' : 'gbtree',
-            'base_score' : 2,
-            'silent': 1,
-            'eval_metric': 'mae'
-        }
-
-        training = xgboost.DMatrix(inputs, outputs, feature_names = data[0][0].columns)
-        logging.info(f"Len outputs: {len(outputs)}")
+        
+        # Original code set "eval_metric" to "mae"
+        clf = xgboost.XGBRegressor(
+            n_estimators=50,
+            objective="reg:linear",
+            booster="gbtree",
+            max_depth=10,
+            base_score=2,
+            importance_type="gain", # For feature importance
+            random_state=args.seed # Not set in original code
+            )
         logging.info('Training started')
-        model = xgboost.train(param, training, param['num_epochs'])
-        model.save_model(MODEL_PATH)
+        clf.fit(inputs, outputs)
+
+#        training = xgboost.DMatrix(inputs, outputs, feature_names = data[0][0].columns)
+#        logging.info(f"Len outputs: {len(outputs)}")
+#        model = xgboost.train(param, training, param['num_epochs'])
+        clf.save_model(MODEL_PATH)
         
         def evaluate_model(files, write_to_simulator=False):
             real = []
@@ -87,7 +95,7 @@ if __name__ == "__main__":
                 data = xgboost_util.prepare_files([f], args.look_back, scaling, TARGET_COLUMN)
                 inputs, outputs = xgboost_util.make_io(data)
 
-                y_pred = model.predict(xgboost.DMatrix(inputs, feature_names = data[0][0].columns))
+                y_pred = clf.predict(inputs)
                 pred = y_pred.tolist()
 
                 real += outputs
