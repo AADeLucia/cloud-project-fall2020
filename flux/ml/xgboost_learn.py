@@ -1,15 +1,16 @@
 #!/usr/bin/env python
 
-import xgboost
 import os
-import xgboost_util
 import math
-
+import pickle
 from argparse import ArgumentParser
-import pandas as pd
-import numpy as np
 import random
 import logging
+
+import xgboost
+import xgboost_util
+import pandas as pd
+import numpy as np
 
 logging.basicConfig(level=logging.INFO)
 
@@ -51,7 +52,8 @@ if __name__ == "__main__":
         TRAINING_PATH = f"{args.data_dir}/{TEST_NAME}/training/"
         TEST_PATH = f"{args.data_dir}/{TEST_NAME}/test/"
         VALIDATION_PATH = f"{args.data_dir}/{TEST_NAME}/validation/"
-
+        MODEL_PATH = f"{args.output_dir}/xgboost_{TEST_NAME}"
+        
         training_files = [os.path.join(TRAINING_PATH, f) for f in os.listdir(TRAINING_PATH)]
         test_files = [os.path.join(TEST_PATH, f) for f in os.listdir(TEST_PATH)]
         validation_files = [os.path.join(VALIDATION_PATH, f) for f in os.listdir(VALIDATION_PATH)]
@@ -76,7 +78,8 @@ if __name__ == "__main__":
         logging.info(f"Len outputs: {len(outputs)}")
         logging.info('Training started')
         model = xgboost.train(param, training, param['num_epochs'])
-
+        model.save_model(MODEL_PATH)
+        
         def evaluate_model(files, write_to_simulator=False):
             real = []
             predicted = []
@@ -102,5 +105,10 @@ if __name__ == "__main__":
             logging.info(f"{name}\tMAE: {mae:.2}\tMSE: {mse:.2}\tR2: {r2:.2}")
         
         logging.info("------------------------------------")
+
+    # Save all scores
+    logging.info("Saving all results")
+    with open(f"{args.output_dir}/xgboost_results.pkl", "wb") as f:
+        pickle.dump(results_dict, f)
 
 
