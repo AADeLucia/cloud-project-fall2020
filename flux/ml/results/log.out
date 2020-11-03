@@ -1,76 +1,21 @@
 Started running experiment KMeans
-Started running experiment KMeans
-Started running experiment KMeans
-Started running experiment KMeans
-Started running experiment KMeans
 Loading pre-trained model
+TrainX: [[6.2938601e-02 4.9912650e-04 4.0001755e-06 ... 5.4843584e-03
+  3.1101173e-01 0.0000000e+00]
+ [6.9736846e-02 7.2373343e-03 6.3702041e-06 ... 7.4012061e-03
+  3.5098251e-02 0.0000000e+00]
+ [7.1052633e-02 0.0000000e+00 1.3532925e-05 ... 9.8413602e-03
+  1.5379998e-01 0.0000000e+00]
+ ...
+ [7.4692982e-01 2.7352133e-01 5.6810397e-01 ... 5.5978858e-01
+  3.7789650e-02 0.0000000e+00]
+ [7.5000000e-01 2.9947590e-03 5.6812739e-01 ... 5.5979425e-01
+  5.2027055e-04 0.0000000e+00]
+ [7.5043857e-01 0.0000000e+00 5.6813866e-01 ... 5.5979425e-01
+  1.5608117e-03 0.0000000e+00]]
 Train Score: 0.93 R2
 Test Score: 0.86 R2
 Validation Score: 0.94 R2
----------------------------------------------------------------------
-
-Started running experiment PageRank
-Loading pre-trained model
-Train Score: 0.89 R2
-Test Score: 0.87 R2
-Validation Score: 0.84 R2
----------------------------------------------------------------------
-
-Started running experiment SGD
-Loading pre-trained model
-Train Score: 0.45 R2
-Test Score: 0.53 R2
-Validation Score: 0.69 R2
----------------------------------------------------------------------
-
-Started running experiment tensorflow
-Loading pre-trained model
-Train Score: 0.96 R2
-Test Score: 0.96 R2
-Validation Score: 0.96 R2
----------------------------------------------------------------------
-
-Started running experiment web_server
-Loading pre-trained model
-Train Score: 0.89 R2
-Test Score: 0.80 R2
-Validation Score: 0.84 R2
----------------------------------------------------------------------
-
-Saving all results
-Started running experiment KMeans
-Loading pre-trained model
-Train Score: 0.93 R2
-Test Score: 0.86 R2
-Validation Score: 0.94 R2
----------------------------------------------------------------------
-
-Started running experiment PageRank
-Loading pre-trained model
-Train Score: 0.89 R2
-Test Score: 0.87 R2
-Validation Score: 0.84 R2
----------------------------------------------------------------------
-
-Started running experiment SGD
-Loading pre-trained model
-Train Score: 0.45 R2
-Test Score: 0.53 R2
-Validation Score: 0.69 R2
----------------------------------------------------------------------
-
-Started running experiment tensorflow
-Loading pre-trained model
-Train Score: 0.96 R2
-Test Score: 0.96 R2
-Validation Score: 0.96 R2
----------------------------------------------------------------------
-
-Started running experiment web_server
-Loading pre-trained model
-Train Score: 0.89 R2
-Test Score: 0.80 R2
-Validation Score: 0.84 R2
 ---------------------------------------------------------------------
 
 Saving all results
