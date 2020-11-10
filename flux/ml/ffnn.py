@@ -70,7 +70,7 @@ def main():
     if args.debug:
         logger.setLevel(logging.DEBUG)
     if args.log_file:
-        filehandler = logging.FileHandler(args.log_file, 'a')
+        filehandler = logging.FileHandler(args.log_file, "w+")
         logger.addHandler(filehandler)
 
     # Set seed for reproducibility
@@ -125,6 +125,7 @@ def main():
             model = load_model(MODEL_PATH)
         
         # Make predictions
+        logging.debug(f"TrainX: {trainX}")
         trainPredict = model.predict(trainX)
         testPredict = model.predict(testX)
         validationPredict = model.predict(validationX)
