@@ -64,11 +64,12 @@ def main():
     # Parse commandline options
     args = parse_args()
     results_dict = {}
-    
+
     # Customize logging
     logger = logging.getLogger()
     if args.debug:
         logger.setLevel(logging.DEBUG)
+        logging.debug(args)
     if args.log_file:
         filehandler = logging.FileHandler(args.log_file, "w+")
         logger.addHandler(filehandler)
@@ -84,7 +85,7 @@ def main():
         TEST_PATH = f"{args.data_dir}/{TEST_NAME}/test/"
         VALIDATION_PATH = f"{args.data_dir}/{TEST_NAME}/validation/"
         MODEL_PATH = f"{args.output_dir}/ffnn_{TEST_NAME}"
-        
+
         # Load and normalize the dataset
         scaler = MinMaxScaler(feature_range=(0, 1))
 
@@ -100,7 +101,7 @@ def main():
         trainX, trainY = create_dataset(train, args.look_back)
         testX, testY = create_dataset(test, args.look_back)
         validationX, validationY = create_dataset(validation, args.look_back)
- 
+
         # Check if model needs to be trained
         if not args.predict_only:
             # Build and train model
@@ -123,20 +124,20 @@ def main():
         else:
             logging.info("Loading pre-trained model")
             model = load_model(MODEL_PATH)
-        
+
         # Make predictions
         logging.debug(f"TrainX: {trainX}")
         trainPredict = model.predict(trainX)
         testPredict = model.predict(testX)
         validationPredict = model.predict(validationX)
-        
+
         trainScore = r2_score(trainY.flatten(), trainPredict.flatten())
         logging.info('Train Score: %.2f R2' % (trainScore))
         testScore = r2_score(testY.flatten(), testPredict.flatten())
         logging.info('Test Score: %.2f R2' % (testScore))
         validationScore = r2_score(validationY.flatten(), validationPredict.flatten())
         logging.info('Validation Score: %.2f R2' % (validationScore))
-        
+
         results_dict[TEST_NAME] = {
             "train": trainScore,
             "test": testScore,
@@ -152,5 +153,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-

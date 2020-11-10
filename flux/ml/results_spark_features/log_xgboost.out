@@ -1,0 +1,19 @@
+On test KMeans
+Training started
+train	MAE: 1.1e-06	MSE: 0.00017	R2: 1.0
+test	MAE: 0.00024	MSE: 0.0015	R2: 0.83
+validation	MAE: 0.00015	MSE: 0.0011	R2: 0.9
+------------------------------------
+On test PageRank
+Training started
+train	MAE: 7.9e-07	MSE: 0.00037	R2: 1.0
+test	MAE: 8.6e-05	MSE: 0.0011	R2: 0.9
+validation	MAE: 8.3e-05	MSE: 0.001	R2: 0.86
+------------------------------------
+On test SGD
+Training started
+train	MAE: 5.8e-06	MSE: 0.00053	R2: 0.88
+test	MAE: 1.7e-05	MSE: 0.00078	R2: 0.58
+validation	MAE: 1.2e-05	MSE: 0.0009	R2: 0.66
+------------------------------------
+Saving all results
