@@ -46,77 +46,77 @@ if __name__ == "__main__":
     if args.log_file:
         filehandler = logging.FileHandler(args.log_file, "w+")
         logger.addHandler(filehandler)
-    
+
     # Set seed
     random.seed(args.seed)
 
     # Train model for each dataset
     TARGET_COLUMN = 'flow_size'
     for TEST_NAME in args.tests:
-        logging.info(f"On test {TEST_NAME}")
-        results_dict[TEST_NAME] = {}
+        for TRAIN_NAME in args.tests:
+            logging.info(f"On test {TEST_NAME}")
+            logging.info(f"On train {TRAIN_NAME}")
+            results_dict[TEST_NAME] = {}
 
-        TRAINING_PATH = f"{args.data_dir}/{TEST_NAME}/training/"
-        TEST_PATH = f"{args.data_dir}/{TEST_NAME}/test/"
-        VALIDATION_PATH = f"{args.data_dir}/{TEST_NAME}/validation/"
-        MODEL_PATH = f"{args.output_dir}/xgboost_{TEST_NAME}"
-        
-        training_files = [os.path.join(TRAINING_PATH, f) for f in os.listdir(TRAINING_PATH)]
-        test_files = [os.path.join(TEST_PATH, f) for f in os.listdir(TEST_PATH)]
-        validation_files = [os.path.join(VALIDATION_PATH, f) for f in os.listdir(VALIDATION_PATH)]
+            TRAINING_PATH = f"{args.data_dir}/{TRAIN_NAME}/training/"
+            TEST_PATH = f"{args.data_dir}/{TEST_NAME}/test/"
+            VALIDATION_PATH = f"{args.data_dir}/{TEST_NAME}/validation/"
+            MODEL_PATH = f"{args.output_dir}/xgboost_{TEST_NAME}"
 
-        scaling = xgboost_util.calculate_scaling(training_files)
-        data = xgboost_util.prepare_files(training_files, args.look_back, scaling, TARGET_COLUMN)
+            training_files = [os.path.join(TRAINING_PATH, f) for f in os.listdir(TRAINING_PATH)]
+            test_files = [os.path.join(TEST_PATH, f) for f in os.listdir(TEST_PATH)]
+            validation_files = [os.path.join(VALIDATION_PATH, f) for f in os.listdir(VALIDATION_PATH)]
 
-        inputs, outputs = xgboost_util.make_io(data)
-        
-        # Original code set "eval_metric" to "mae"
-        clf = xgboost.XGBRegressor(
-            n_estimators=50,
-            objective="reg:linear",
-            booster="gbtree",
-            max_depth=10,
-            base_score=2,
-            importance_type="gain", # For feature importance
-            random_state=args.seed # Not set in original code
-            )
-        logging.info('Training started')
-        clf.fit(inputs, outputs)
+            scaling = xgboost_util.calculate_scaling(training_files)
+            data = xgboost_util.prepare_files(training_files, args.look_back, scaling, TARGET_COLUMN)
 
-#        training = xgboost.DMatrix(inputs, outputs, feature_names = data[0][0].columns)
-#        logging.info(f"Len outputs: {len(outputs)}")
-#        model = xgboost.train(param, training, param['num_epochs'])
-        clf.save_model(MODEL_PATH)
-        
-        def evaluate_model(files, write_to_simulator=False):
-            real = []
-            predicted = []
-            for f in files:
-                data = xgboost_util.prepare_files([f], args.look_back, scaling, TARGET_COLUMN)
-                inputs, outputs = xgboost_util.make_io(data)
+            inputs, outputs = xgboost_util.make_io(data)
 
-                y_pred = clf.predict(inputs)
-                pred = y_pred.tolist()
+            # Original code set "eval_metric" to "mae"
+            clf = xgboost.XGBRegressor(
+                n_estimators=50,
+                objective="reg:linear",
+                booster="gbtree",
+                max_depth=10,
+                base_score=2,
+                importance_type="gain", # For feature importance
+                random_state=args.seed # Not set in original code
+                )
+            logging.info('Training started')
+            clf.fit(inputs, outputs)
 
-                real += outputs
-                predicted += pred
+    #        training = xgboost.DMatrix(inputs, outputs, feature_names = data[0][0].columns)
+    #        logging.info(f"Len outputs: {len(outputs)}")
+    #        model = xgboost.train(param, training, param['num_epochs'])
+            clf.save_model(MODEL_PATH)
 
-            return xgboost_util.score_predictions(real, predicted)
+            def evaluate_model(files, write_to_simulator=False):
+                real = []
+                predicted = []
+                for f in files:
+                    data = xgboost_util.prepare_files([f], args.look_back, scaling, TARGET_COLUMN)
+                    inputs, outputs = xgboost_util.make_io(data)
 
-        for name, files in [("train", training_files), ("test", test_files), ("validation", validation_files)]:
-            mae, mse, r2 = evaluate_model(files)
-            results_dict[TEST_NAME][name] = {
-                "mae": mae,
-                "mse": mse,
-                "r2": r2
-            }
-            logging.info(f"{name}\tMAE: {mae:.2}\tMSE: {mse:.2}\tR2: {r2:.2}")
-        
-        logging.info("------------------------------------")
+                    y_pred = clf.predict(inputs)
+                    pred = y_pred.tolist()
+
+                    real += outputs
+                    predicted += pred
+
+                return xgboost_util.score_predictions(real, predicted)
+
+            for name, files in [("train", training_files), ("test", test_files), ("validation", validation_files)]:
+                mae, mse, r2 = evaluate_model(files)
+                results_dict[TEST_NAME][name] = {
+                    "mae": mae,
+                    "mse": mse,
+                    "r2": r2
+                }
+                logging.info(f"{name}\tMAE: {mae:.2}\tMSE: {mse:.2}\tR2: {r2:.2}")
+
+            logging.info("------------------------------------")
 
     # Save all scores
     logging.info("Saving all results")
     with open(f"{args.output_dir}/xgboost_results.pkl", "wb") as f:
         pickle.dump(results_dict, f)
-
-
