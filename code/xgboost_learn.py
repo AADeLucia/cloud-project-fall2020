@@ -5,9 +5,14 @@ Modified by Alexandra DeLucia. Added:
 - model saving
 - switched to scikit-learn API to work with LIME
 (https://xgboost.readthedocs.io/en/latest/python/python_api.html#module-xgboost.sklearn)
+- train on 2 and test on 1
+
+Modified by Kevin Sherman. Added:
+- train on one set and test on another
 """
 
 import os
+import sys
 import math
 import pickle
 from argparse import ArgumentParser
@@ -32,13 +37,14 @@ def parse_args():
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--predict-only", action="store_true")
+    parser.add_argument("--spark-features-only", action="store_true", help="Only use shared Spark features")
+    parser.add_argument("--mode", type=str, default="normal",
+                        choices=["normal", "trainAllTestOne", "trainOneTestAll", "leaveOneOut", "trainAllTestAll"])
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = parse_args()
-    results_dict = {}
-
     # Customize logging
     logger = logging.getLogger()
     if args.debug:
@@ -50,23 +56,53 @@ if __name__ == "__main__":
     # Set seed
     random.seed(args.seed)
 
+    names, train_paths, valid_paths, test_paths = [], [], [], []
+    if len(args.tests) == 1 and args.mode != "normal":
+        logging.error(f"Mode must be 'normal' for only one test")
+        sys.exit(1)
+    if args.mode == "normal":
+        for test_name in args.tests:
+            names.append(test_name)
+            train_paths.append([f"{args.data_dir}/{test_name}/training/"])
+            valid_paths.append([f"{args.data_dir}/{test_name}/validation/"])
+            test_paths.append([f"{args.data_dir}/{test_name}/test/"])
+    elif args.mode == "leaveOneOut":
+        for test_name in args.tests:
+            names.append(f"trainAllTest_{test_name}")
+            train_paths.append([f"{args.data_dir}/{t}/training/" for t in args.tests if t != test_name])
+            valid_paths.append([f"{args.data_dir}/{test_name}/validation/"])
+            test_paths.append([f"{args.data_dir}/{test_name}/test/"])
+    elif args.mode == "trainOneTestAll":
+        for test_name in args.tests:
+            names.append(f"train_{test_name}_testAll")
+            train_paths.append([f"{args.data_dir}/{test_name}/training/"])
+            valid_paths.append([f"{args.data_dir}/{t}/validation/" for t in args.tests])
+            test_paths.append([f"{args.data_dir}/{t}/test/" for t in args.tests])
+    elif args.mode == "trainAllTestAll":
+        names.append("all_" + "_".join(args.tests))
+        train_paths.append([f"{args.data_dir}/{t}/training/" for t in args.tests])
+        valid_paths.append([f"{args.data_dir}/{t}/validation/" for t in args.tests])
+        test_paths.append([f"{args.data_dir}/{t}/test/" for t in args.tests])
+    else:
+        logging.error(f"Invalid mode")
+        sys.exit(1)
+
     # Train model for each dataset
+    results_dict = {}
     TARGET_COLUMN = 'flow_size'
-    for TEST_NAME in args.tests:
+    for TEST_NAME, TRAINING_PATH, VALIDATION_PATH, TEST_PATH  in zip(names, train_paths, valid_paths, test_paths):
         logging.info(f"On test {TEST_NAME}")
         results_dict[TEST_NAME] = {}
-
-        TRAINING_PATH = f"{args.data_dir}/{TEST_NAME}/training/"
-        TEST_PATH = f"{args.data_dir}/{TEST_NAME}/test/"
-        VALIDATION_PATH = f"{args.data_dir}/{TEST_NAME}/validation/"
         MODEL_PATH = f"{args.output_dir}/xgboost_{TEST_NAME}"
-        
-        training_files = [os.path.join(TRAINING_PATH, f) for f in os.listdir(TRAINING_PATH)]
-        test_files = [os.path.join(TEST_PATH, f) for f in os.listdir(TEST_PATH)]
-        validation_files = [os.path.join(VALIDATION_PATH, f) for f in os.listdir(VALIDATION_PATH)]
+
+        training_files = [os.path.join(t, f) for t in TRAINING_PATH for f in os.listdir(t)]
+        validation_files = [os.path.join(t, f) for t in VALIDATION_PATH for f in os.listdir(t)]
+        test_files = [os.path.join(t, f) for t in TEST_PATH for f in os.listdir(t)]
+        logging.debug(f"{training_files}")
 
         scaling = xgboost_util.calculate_scaling(training_files)
-        data = xgboost_util.prepare_files(training_files, args.look_back, scaling, TARGET_COLUMN)
+        data = xgboost_util.prepare_files(training_files, args.look_back, scaling,
+                                          TARGET_COLUMN, use_shared_features=args.spark_features_only)
 
         inputs, outputs = xgboost_util.make_io(data)
         
@@ -82,17 +118,13 @@ if __name__ == "__main__":
             )
         logging.info('Training started')
         clf.fit(inputs, outputs)
-
-#        training = xgboost.DMatrix(inputs, outputs, feature_names = data[0][0].columns)
-#        logging.info(f"Len outputs: {len(outputs)}")
-#        model = xgboost.train(param, training, param['num_epochs'])
         clf.save_model(MODEL_PATH)
         
         def evaluate_model(files, write_to_simulator=False):
             real = []
             predicted = []
             for f in files:
-                data = xgboost_util.prepare_files([f], args.look_back, scaling, TARGET_COLUMN)
+                data = xgboost_util.prepare_files([f], args.look_back, scaling, TARGET_COLUMN, use_shared_features=args.spark_features_only)
                 inputs, outputs = xgboost_util.make_io(data)
 
                 y_pred = clf.predict(inputs)

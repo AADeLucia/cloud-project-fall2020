@@ -1,7 +1,14 @@
+"""
+Modified by Kevin Sherman and Alexandra DeLucia
+* Can now use just the shared spark features
+"""
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
 import pandas as pd
 import numpy as np
 from pandas import concat
+
+shared_spark_features = ["flow_size", "time", "agg_net_out", "agg_net_in", "agg_net_out_per_machine",
+                         "agg_net_in_per_machine", "machine"]
 
 
 def score_predictions(real, prediction):
@@ -33,13 +40,15 @@ def calculate_scaling(training_paths):
 def resize(s,scaling):
     return s/scaling[s.name]
 
-def prepare_files(files, window_size, scaling, target_column='flow_size'):
+def prepare_files(files, window_size, scaling, target_column='flow_size', use_shared_features=False):
     result = []
 
     for f in files:
         df = pd.read_csv(f, index_col=False)
 
         df = df.drop("index", axis=1)
+        if use_shared_features:
+            df = df.drop([c for c in df.columns if c not in shared_spark_features], axis=1)
 
         df = df.apply((lambda x: resize(x, scaling)), axis=0)
         flow_size = df[target_column]
