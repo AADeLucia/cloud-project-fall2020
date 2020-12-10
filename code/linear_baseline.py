@@ -138,7 +138,7 @@ def main():
         trainScore = r2_score(trainY, trainPredict)
         logging.info('Train Score: %.2f R2' % (trainScore))
         testScore = r2_score(testY, testPredict)
-        #logging.info('Test Score: %.2f R2' % (testScore))
+        logging.info('Test Score: %.2f R2' % (testScore))
         validationScore = r2_score(validationY, validationPredict)
         logging.info('Validation Score: %.2f R2' % (validationScore))
         
