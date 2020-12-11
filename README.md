@@ -1,7 +1,21 @@
 # Cloud Project
 Kevin Sherman, Alexandra DeLucia, Hadley VanRenterghem
 
-## Getting Started
+## Getting Started (with Google Cloud VM)
+
+1. Email team (emails below) for access to Google Cloud VM.
+
+2. Log into Google Cloud Platform and under `VM Instances` click `SSH` to access the VM.
+
+3. Change to the tester user and move into project directory. You will be prompted for a password. The password is `tester`.
+
+    ```bash
+   su tester && cd ~/cloud-project-fall2020 
+   ```
+
+4. You are ready for results reproduction! Skip to "Running the experiments" section below.
+
+## Getting Started (without Google Cloud VM)
 
 1. Clone this repo 
 
@@ -31,7 +45,25 @@ Kevin Sherman, Alexandra DeLucia, Hadley VanRenterghem
 
 ## Running the experiments
 
-The scripts are in `/scripts`. Remember to activate your new python environment before running the scripts.
+All scripts to reproduce our results are in `/scripts`. 
+
+To reproduce our reproduction of the original Flux models: 
+```bash
+./flux_ffn.sh
+./flux_xgboost.sh
+```
+
+To run our baseline for using the average of the previous flows:
+```bash
+./linear_baseline.sh
+```
+
+To run our model robustness experiments:
+```bash
+./xgboost_robust.sh
+```
+
+The numbers will match the results on the slides.
 
 ---
 
